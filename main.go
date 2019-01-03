@@ -14,14 +14,24 @@ type Headline struct {
 	Blurb *string `json:"blurb,omitempty"`
 }
 
-func scrapeWashingtonPostHeadlines() (*[]*Headline, error) {
-	headlines := make([]*Headline, 0)
+type WashingtonPostScraper struct {
+	collector *colly.Collector
+}
 
+func (s WashingtonPostScraper) CreateNewScraper() *WashingtonPostScraper {
 	c := colly.NewCollector()
 	// c := colly.NewCollector(colly.Debugger(&debug.LogDebugger{}))
 	c.UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
 
-	c.OnHTML("#main-content", func(e *colly.HTMLElement) {
+	scraper := WashingtonPostScraper{
+		collector: c,
+	}
+	return &scraper
+}
+
+func (s WashingtonPostScraper) ScrapeHeadlines() (*[]*Headline, error) {
+	headlines := make([]*Headline, 0)
+	s.collector.OnHTML("#main-content", func(e *colly.HTMLElement) {
 		e.ForEach("div.flex-item", func(ndx int, flex *colly.HTMLElement) {
 			url := flex.ChildAttr("div.headline > a", "href")
 			if url != "" {
@@ -44,8 +54,13 @@ func scrapeWashingtonPostHeadlines() (*[]*Headline, error) {
 	// 	fmt.Println("Visiting", r.URL.String())
 	// })
 
-	c.Visit("https://www.washingtonpost.com/?noredirect=on")
+	s.collector.Visit("https://www.washingtonpost.com/?noredirect=on")
 	return &headlines, nil
+}
+
+func scrapeWashingtonPostHeadlines() (*[]*Headline, error) {
+	scraper := WashingtonPostScraper{}.CreateNewScraper()
+	return scraper.ScrapeHeadlines()
 }
 
 func main() {
