@@ -1,3 +1,5 @@
+# docker build -t wapo .
+# docker run wapo scrape
 FROM golang:1.11.1-alpine AS builder
 
 ENV CGO_ENABLED=0
